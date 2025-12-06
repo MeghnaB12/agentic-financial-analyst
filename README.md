@@ -51,7 +51,98 @@ Prerequisites
 * Python 3.10+
 * API Keys for Groq (LLM) and Tavily (Web Search)
 
+
 Installation
 
 Clone the repository:
 
+```
+git clone [https://github.com/MeghnaB12/agentic-financial-analyst.git](https://github.com/MeghnaB12/agentic-financial-analyst.git)
+cd agentic-financial-analyst
+```
+
+Create & Activate Virtual Environment:
+
+```
+# Create virtual environment
+python3 -m venv venv
+
+# Activate (Mac/Linux)
+source venv/bin/activate
+# Activate (Windows)
+venv\Scripts\activate
+```
+
+Install dependencies:
+
+```
+pip install -r requirements.txt
+```
+
+Configure Environment: Create a .env file in the root directory:
+
+```
+GROQ_API_KEY=gsk_...
+TAVILY_API_KEY=tvly_...
+```
+
+Running the Agent
+
+Step 1: Ingest Data Process the Tesla/Apple 10-K PDFs located in the /data folder.
+```
+python src/ingest.py
+```
+Output: [SUCCESS] Saved to ./chroma_db
+
+Step 2: Run Analysis Execute the agent to analyze risks and benchmarks.
+```
+python src/agent.py
+```
+Output: The agent prints "Chain of Thought" reasoning and saves logs to financial_analysis_logs.txt.
+
+## 🛠 Design Decisions
+1. Robust Dependency Management
+
+Decision: Pinned langchain to the stable v0.2.16 release.
+
+Reasoning: Prevents breaking changes in production environments. Bleeding-edge versions of LangChain often alter the AgentExecutor logic; pinning ensures reliability.
+
+2. "Chain of Thought" Prompt Engineering
+
+Decision: Implemented Few-Shot Prompting to guide the agent.
+
+Reasoning: Financial analysis requires a specific tone. By providing examples (e.g., "According to the 10-K filing..."), the model mimics a professional analyst rather than a generic chatbot.
+
+3. Failsafe Observability
+
+Decision: Implemented a dual-logging system (DualLogger class) and a token usage fallback.
+
+Reasoning: In production, APIs (like Groq) sometimes drop metadata. The system includes a fallback calculator to estimate token usage based on character count if the API returns null, ensuring logs are always complete.
+
+## 📊 Observability Logs
+Logs are captured in financial_analysis_logs.txt. They provide a transparent audit trail of the AI's decision-making process.
+
+Sample Execution Trace:
+```
+> Entering new AgentExecutor chain...
+Invoking: search_10k_documents with {'query': 'Item 1A. Risk Factors supply chain'}
+[Source: Apple 10-K, Page 12] "The Company relies on single-source outsourcing partners in the U.S., Asia and Europe..."
+
+Invoking: tavily_search_results_json with {'query': 'Apple revenue growth vs Huawei 2024'}
+[Source: Web - Yahoo Finance] "Huawei revenue surged 37% year-over-year..."
+
+```
+
+## 📂 Repository Structure
+
+```
+├── data/                   # Public 10-K PDFs (Tesla, Apple)
+├── src/
+│   ├── agent.py            # Core Agent Logic (Llama 3.3 + Tools)
+│   ├── ingest.py           # ETL Pipeline (PDF -> ChromaDB)
+├── chroma_db/              # Persisted Vector Store
+├── requirements.txt        # Pinned dependencies
+├── financial_analysis_logs.txt # Execution output logs
+└── README.md               # Documentation
+
+```
