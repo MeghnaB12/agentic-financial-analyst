@@ -44,7 +44,7 @@ graph LR
 * Embeddings: Local HuggingFaceEmbeddings ensure fast, cost-free vectorization without API rate limits.
 * Vector Store: ChromaDB persists the data locally for low-latency retrieval.
 
-🚀 Setup & Usage
+## 🚀 Setup & Usage
 
 Prerequisites
 
@@ -54,14 +54,14 @@ Prerequisites
 
 Installation
 
-Clone the repository:
+1. Clone the repository:
 
 ```
 git clone [https://github.com/MeghnaB12/agentic-financial-analyst.git](https://github.com/MeghnaB12/agentic-financial-analyst.git)
 cd agentic-financial-analyst
 ```
 
-Create & Activate Virtual Environment:
+2. Create & Activate Virtual Environment:
 
 ```
 # Create virtual environment
@@ -73,20 +73,20 @@ source venv/bin/activate
 venv\Scripts\activate
 ```
 
-Install dependencies:
+3. Install dependencies:
 
 ```
 pip install -r requirements.txt
 ```
 
-Configure Environment: Create a .env file in the root directory:
+4. Configure Environment: Create a .env file in the root directory:
 
 ```
 GROQ_API_KEY=gsk_...
 TAVILY_API_KEY=tvly_...
 ```
 
-Running the Agent
+5. Running the Agent
 
 Step 1: Ingest Data Process the Tesla/Apple 10-K PDFs located in the /data folder.
 ```
