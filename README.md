@@ -119,8 +119,27 @@ Decision: Implemented a dual-logging system (DualLogger class) and a token usage
 
 Reasoning: In production, APIs (like Groq) sometimes drop metadata. The system includes a fallback calculator to estimate token usage based on character count if the API returns null, ensuring logs are always complete.
 
+## ✅ Verification & Testing
+
+The `agent.py` script includes an integrated test harness (`evaluate_project` function) that automatically validates the system's performance against pre-defined financial scenarios.
+
+**Test Coverage:**
+1.  **Internal Retrieval Test:** Runs a query about "Risk Factors" to verify the agent can correctly parse and cite the local 10-K PDF.
+2.  **Hybrid Reasoning Test:** Runs a complex query comparing "Revenue Growth" to verify the agent can route to the Web Search tool when internal data is insufficient.
+
+**Metrics Captured:**
+For every test run, the system logs:
+* **Latency:** Execution time in seconds.
+* **Efficiency:** Number of tool calls required to solve the problem.
+* **Cost:** Estimated token usage (Prompt + Completion).
+
 ## 📊 Observability Logs
 Logs are captured in financial_analysis_logs.txt. They provide a transparent audit trail of the AI's decision-making process.
+
+How to generate logs: Run the agent using tee to view output live while saving to a file:
+```
+python src/agent.py | tee final_logs.txt
+```
 
 Sample Execution Trace:
 ```
