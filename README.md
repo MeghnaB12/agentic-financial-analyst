@@ -134,11 +134,6 @@ For every test run, the system logs:
 ## 📊 Observability Logs
 Logs are captured in financial_analysis_logs.txt. They provide a transparent audit trail of the AI's decision-making process.
 
-How to generate logs: Run the agent using tee to view output live while saving to a file:
-```
-python src/agent.py | tee financial_analysis_logs.txt
-```
-
 Sample Execution Trace:
 ```
 > Entering new AgentExecutor chain...
