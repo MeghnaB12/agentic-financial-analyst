@@ -3,4 +3,4 @@ venv/
 __pycache__/
 chroma_db/
 .DS_Store
-financial_analysis_logs.txt
+
