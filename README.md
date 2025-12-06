@@ -29,12 +29,12 @@ External Engine (Web): Used for questions like "How does Tesla's growth compare 
 ## ⚙️ Data Ingestion Pipeline
 Before the agent runs, raw PDF financial reports are processed into a semantic search index.
 
-```
-graph LR
+```mermaid
+graph TD
     A[Raw PDF 10-Ks] --> B[PyPDFLoader]
-    B --> C[Text Splitting<br/>(1000 token chunks)]
-    C --> D[HuggingFace Embeddings<br/>(all-MiniLM-L6-v2)]
-    D --> E[(ChromaDB<br/>Vector Store)]
+    B --> C["Text Splitting<br/>(1000 token chunks)"]
+    C --> D["HuggingFace Embeddings<br/>(all-MiniLM-L6-v2)"]
+    D --> E[("ChromaDB<br/>Vector Store")]
 ```
 
 ## Technical Components
@@ -57,7 +57,7 @@ Installation
 1. Clone the repository:
 
 ```
-git clone [https://github.com/MeghnaB12/agentic-financial-analyst.git](https://github.com/MeghnaB12/agentic-financial-analyst.git)
+git clone https://github.com/MeghnaB12/agentic-financial-analyst.git
 cd agentic-financial-analyst
 ```
 
@@ -138,7 +138,7 @@ Logs are captured in financial_analysis_logs.txt. They provide a transparent aud
 
 How to generate logs: Run the agent using tee to view output live while saving to a file:
 ```
-python src/agent.py | tee final_logs.txt
+python src/agent.py | tee financial_analysis_logs.txt
 ```
 
 Sample Execution Trace:
@@ -161,7 +161,7 @@ Invoking: tavily_search_results_json with {'query': 'Apple revenue growth vs Hua
 │   ├── ingest.py           # ETL Pipeline (PDF -> ChromaDB)
 ├── chroma_db/              # Persisted Vector Store
 ├── requirements.txt        # Pinned dependencies
-├── financial_analysis_logs.txt # Execution output logs
+├── financial_analysis_logs.txt  # Execution output logs
 └── README.md               # Documentation
 
 ```
