@@ -1,12 +1,12 @@
 # Agentic Financial Analyst (SEC 10-K)
 
-An autonomous AI agent designed to audit public company Annual Reports (SEC 10-K Filings), extract critical risk factors, and benchmark financial performance against real-time market data.
+An autonomous AI agent designed to audit public company Annual Reports (SEC 10-K filings), extract critical risk factors, and benchmark financial performance against current web data.
 
 ---
 
 ## 🏗 System Architecture
 
-The agent operates on a dynamic routing logic, deciding autonomously whether to trust internal documents or verify facts with the live web.
+The agent uses dynamic routing to decide whether a question should be answered from indexed filings or supplemented with external web search.
 
 ```mermaid
 graph TD
@@ -15,17 +15,17 @@ graph TD
     B -->|External Question| D[<b>Web Search Tool</b><br/>Competitor Data]
     C --> E[Context Retrieval]
     D --> E
-    E --> F[<b>LLM Synthesis</b><br/>Reasoning & Citations]
+    E --> F[<b>LLM Synthesis</b><br/>Answer & Citations]
     F --> G[Final Answer]
 ```
+
 ## The "Twin-Engine" Approach
 
-Internal Engine (RAG): Used for questions like "What are the primary supply chain risks?" or "Summarize the revenue recognition policy." It retrieves exact page numbers from the PDF.
+**Internal Engine (RAG):** Used for questions such as "What are the primary supply chain risks?" or "Summarize the revenue recognition policy." It retrieves relevant filing context with page references.
 
-External Engine (Web): Used for questions like "How does Tesla's growth compare to BYD in 2024?" It fetches real-time data that isn't in the historical 10-K.
+**External Engine (Web):** Used for questions such as "How does Tesla's growth compare to BYD in 2024?" when the required information is not contained in the indexed filing.
 
 ## ⚙️ Data Ingestion Pipeline
-Before the agent runs, raw PDF financial reports are processed into a semantic search index.
 
 ```mermaid
 graph TD
@@ -37,124 +37,106 @@ graph TD
 
 ## Technical Components
 
-* Loader: PyPDFLoader handles complex PDF parsing.
-* Chunking: RecursiveCharacterTextSplitter preserves the context of long financial tables.
-* Embeddings: Local HuggingFaceEmbeddings ensure fast, cost-free vectorization without API rate limits.
-* Vector Store: ChromaDB persists the data locally for low-latency retrieval.
+* **Loader:** PyPDFLoader for filing text extraction.
+* **Chunking:** RecursiveCharacterTextSplitter for long-form document segmentation.
+* **Embeddings:** Local HuggingFace embeddings (`all-MiniLM-L6-v2`).
+* **Vector Store:** ChromaDB for persisted local retrieval.
+* **Routing:** Llama 3.3 chooses between filing retrieval and web search.
+* **Observability:** Execution logs capture tool usage, latency, and token estimates.
 
 ## 🚀 Setup & Usage
 
-Prerequisites
+### Prerequisites
 
 * Python 3.10+
-* API Keys for Groq (LLM) and Tavily (Web Search)
+* API keys for Groq and Tavily
 
+### Installation
 
-Installation
-
-1. Clone the repository:
-
-```
+```bash
 git clone https://github.com/MeghnaB12/agentic-financial-analyst.git
 cd agentic-financial-analyst
-```
-
-2. Create & Activate Virtual Environment:
-
-```
-# Create virtual environment
 python3 -m venv venv
-
-# Activate (Mac/Linux)
-source venv/bin/activate
-# Activate (Windows)
-venv\Scripts\activate
-```
-
-3. Install dependencies:
-
-```
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Configure Environment: Create a .env file in the root directory:
+Create a `.env` file:
 
-```
+```env
 GROQ_API_KEY=gsk_...
 TAVILY_API_KEY=tvly_...
 ```
 
-5. Running the Agent
+### Run the project
 
-Step 1: Ingest Data Process the Tesla/Apple 10-K PDFs located in the /data folder.
-```
+Ingest the 10-K PDFs in `/data`:
+
+```bash
 python src/ingest.py
 ```
-Output: [SUCCESS] Saved to ./chroma_db
 
-Step 2: Run Analysis Execute the agent to analyze risks and benchmarks.
-```
+Run the analyst:
+
+```bash
 python src/agent.py
 ```
-Output: The agent prints "Chain of Thought" reasoning and saves logs to financial_analysis_logs.txt.
+
+The application emits a tool/execution trace and writes observability output to `financial_analysis_logs.txt`.
 
 ## 🛠 Design Decisions
-1. Robust Dependency Management
 
-Decision: Pinned langchain to the stable v0.2.16 release.
+### 1. Pinned orchestration dependency
 
-Reasoning: Prevents breaking changes in production environments. Bleeding-edge versions of LangChain often alter the AgentExecutor logic; pinning ensures reliability.
+LangChain is pinned to a known working version to reduce breakage from upstream API changes and keep the project reproducible.
 
-2. "Chain of Thought" Prompt Engineering
+### 2. Few-shot response guidance
 
-Decision: Implemented Few-Shot Prompting to guide the agent.
+Few-shot examples guide the model toward a consistent financial-analysis response style and source-aware phrasing.
 
-Reasoning: Financial analysis requires a specific tone. By providing examples (e.g., "According to the 10-K filing..."), the model mimics a professional analyst rather than a generic chatbot.
+### 3. Failsafe observability
 
-3. Failsafe Observability
+`DualLogger` records execution data, and token usage falls back to an estimate when provider metadata is unavailable. This keeps the evaluation log populated even when an API omits usage metadata.
 
-Decision: Implemented a dual-logging system (DualLogger class) and a token usage fallback.
+## ✅ Verification & Evaluation
 
-Reasoning: In production, APIs (like Groq) sometimes drop metadata. The system includes a fallback calculator to estimate token usage based on character count if the API returns null, ensuring logs are always complete.
+The `evaluate_project` harness runs predefined scenarios that exercise both major routing paths:
 
-## ✅ Verification & Testing
+1. **Internal retrieval scenario:** asks about filing risk factors and checks that the agent uses the local 10-K retrieval path.
+2. **Hybrid scenario:** asks for a comparative financial question that can require external search when the filing alone is insufficient.
 
-The `agent.py` script includes an integrated test harness (`evaluate_project` function) that automatically validates the system's performance against pre-defined financial scenarios.
+For each run, the harness records:
 
-**Test Coverage:**
-1.  **Internal Retrieval Test:** Runs a query about "Risk Factors" to verify the agent can correctly parse and cite the local 10-K PDF.
-2.  **Hybrid Reasoning Test:** Runs a complex query comparing "Revenue Growth" to verify the agent can route to the Web Search tool when internal data is insufficient.
+* **Latency:** execution time in seconds.
+* **Tool usage:** number of tool calls.
+* **Token estimate:** prompt + completion usage when available, with a fallback estimate otherwise.
 
-**Metrics Captured:**
-For every test run, the system logs:
-* **Latency:** Execution time in seconds.
-* **Efficiency:** Number of tool calls required to solve the problem.
-* **Cost:** Estimated token usage (Prompt + Completion).
+These metrics are operational signals rather than a claim of answer correctness; qualitative financial answers still require source review.
 
 ## 📊 Observability Logs
-Logs are captured in financial_analysis_logs.txt. They provide a transparent audit trail of the AI's decision-making process.
 
-Sample Execution Trace:
-```
+Logs provide an audit trail of tool selection and retrieved evidence without exposing private model reasoning.
+
+Sample execution trace:
+
+```text
 > Entering new AgentExecutor chain...
 Invoking: search_10k_documents with {'query': 'Item 1A. Risk Factors supply chain'}
-[Source: Apple 10-K, Page 12] "The Company relies on single-source outsourcing partners in the U.S., Asia and Europe..."
+[Source: Apple 10-K, Page 12] "The Company relies on single-source outsourcing partners..."
 
 Invoking: tavily_search_results_json with {'query': 'Apple revenue growth vs Huawei 2024'}
-[Source: Web - Yahoo Finance] "Huawei revenue surged 37% year-over-year..."
-
+[Source: Web] external comparison result returned to the agent
 ```
 
 ## 📂 Repository Structure
 
-```
-├── data/                   # Public 10-K PDFs (Tesla, Apple)
+```text
+├── data/                        # Public 10-K PDFs
 ├── src/
-│   ├── agent.py            # Core Agent Logic (Llama 3.3 + Tools)
-│   ├── ingest.py           # ETL Pipeline (PDF -> ChromaDB)
-├── chroma_db/              # Persisted Vector Store
-├── requirements.txt        # Pinned dependencies
-├── financial_analysis_logs.txt  # Execution output logs
-└── README.md               # Documentation
-
+│   ├── agent.py                 # Llama 3.3 + tools + evaluation harness
+│   └── ingest.py                # PDF → embeddings → ChromaDB
+├── chroma_db/                   # Persisted vector store
+├── requirements.txt             # Pinned dependencies
+├── financial_analysis_logs.txt  # Execution/observability output
+└── README.md
 ```
